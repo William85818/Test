@@ -1,4 +1,3 @@
-```mermaid
 graph LR
     subgraph Instruments [儀器層 (Instrument Layer)]
         VNA[VNA 向量網路分析儀<br/>Port 1 / Port 2]
