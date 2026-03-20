@@ -19,17 +19,20 @@ graph LR
         DUT_P2((固定接頭 Port 2<br/>Aux / Ant 2))
     end
 
+    %% 儀器連接至開關矩陣
     VNA <-->|雙向 S 參數| SW_IN
     SA <---|接收路徑| SW_IN
     SMIQ --->|發射路徑| SW_IN
     SG --->|發射路徑 / LO| SW_IN
     CMW <-->|通訊協定收發| SW_IN
 
+    %% 開關矩陣內部路由與混波
     SW_IN <-->|Direct RF Bypass (直通測試)| SW_OUT
     SW_IN --->|IF/RF 訊號| Mixer
     SG -.->|提供 LO 給 Mixer| Mixer
     Mixer --->|升/降頻後訊號| SW_OUT
 
+    %% 輸出至 DUT
     SW_OUT <--> DUT_P1
     SW_OUT <--> DUT_P2
 
