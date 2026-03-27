@@ -1,42 +1,46 @@
-```mermaid
 graph LR
-    subgraph Instruments ["儀器層 (Instrument Layer)"]
-        VNA["VNA 向量網路分析儀<br/>Port 1 / Port 2"]
-        SA["SA 頻譜分析儀<br/>Rx Only"]
-        SMIQ["SMIQ03B 訊號產生器<br/>Tx Only"]
-        SG["SG 一般訊號產生器<br/>Tx / LO Source"]
-        CMW["CMW270 綜合測試儀<br/>TRx"]
+    subgraph ClientLayer ["用戶端 (Client)"]
+        WebUI["測試控管網頁端"]
+        AutoScript["自動化 Python 腳本"]
     end
 
-    subgraph Matrix ["核心切換與訊號處理矩陣 (Switch & Processing Matrix)"]
-        SW_IN{"NxM 無阻塞<br/>RF 開關矩陣<br/>SP6T / 矩陣開關"}
-        Mixer(("混波器 Mixer<br/>Up/Down Conversion"))
-        SW_OUT{"DUT 端<br/>路徑切換開關"}
+    subgraph CoreProcessing ["核心處理區 (Core Processing)"]
+        TestEngine["測試執行引擎"]
+        DataParser["數據解析模組"]
+        PassFail{"判定邏輯<br>Pass / Fail"}
+        ResultDB[("驗證結果資料庫")]
     end
 
-    subgraph DUT_Interface ["待測物端 (DUT Fixed Interface)"]
-        DUT_P1(("固定接頭 Port 1<br/>Main / Ant 1"))
-        DUT_P2(("固定接頭 Port 2<br/>Aux / Ant 2"))
+    subgraph ExternalAPI ["外部 API (External API)"]
+        IssueTracker["缺陷追蹤 API<br>(例如 Jira)"]
+        InstrumentCtrl["儀器控制 API<br>(SCPI over TCP/IP)"]
     end
 
-    VNA <-->|"雙向 S 參數"| SW_IN
-    SW_IN --->|"接收路徑"| SA
-    SMIQ --->|"發射路徑"| SW_IN
-    SG --->|"發射路徑 / LO"| SW_IN
-    CMW <-->|"通訊協定收發"| SW_IN
-
-    SW_IN <-->|"Direct RF Bypass (直通測試)"| SW_OUT
-    SW_IN --->|"IF/RF 訊號"| Mixer
-    SG -.->|"提供 LO 給 Mixer"| Mixer
-    Mixer --->|"升/降頻後訊號"| SW_OUT
-
-    SW_OUT <--> DUT_P1
-    SW_OUT <--> DUT_P2
-
-    classDef inst fill:#f9f9f9,stroke:#333,stroke-width:2px;
-    classDef matrix fill:#e1f5fe,stroke:#0288d1,stroke-width:2px;
-    classDef dut fill:#e8f5e9,stroke:#388e3c,stroke-width:2px;
+    %% 連接線與文字說明
+    WebUI -->|"REST API 觸發測試"| TestEngine
+    AutoScript -->|"JSON over REST"| TestEngine
     
-    class Instruments inst;
-    class Matrix matrix;
-    class DUT_Interface dut;
+    TestEngine -->|"發送控制指令"| InstrumentCtrl
+    InstrumentCtrl -->|"回傳測試 Raw Data"| DataParser
+    
+    DataParser -->|"提取關鍵參數"| PassFail
+    
+    PassFail -->|"測試通過 (寫入紀錄)"| ResultDB
+    PassFail -->|"測試失敗 (寫入紀錄)"| ResultDB
+    PassFail -->|"Webhook 建立 Bug Ticket"| IssueTracker
+
+    %% 莫蘭迪色系自定義樣式 (classDef)
+    %% blueNode: 淺藍色背景、深藍邊框
+    classDef blueNode fill:#D6E4F0,stroke:#4B6584,stroke-width:2px,color:#2C3E50;
+    %% orangeNode: 粉橘色背景、橘色邊框
+    classDef orangeNode fill:#FDEBD0,stroke:#E67E22,stroke-width:2px,color:#873600;
+    %% 資料庫專用
+    classDef dbNode fill:#E5E7E9,stroke:#7F8C8D,stroke-width:2px,color:#2C3E50;
+    %% 判斷邏輯專用
+    classDef decisionNode fill:#E8DAEF,stroke:#8E44AD,stroke-width:2px,color:#4A235A;
+
+    %% 指派樣式給對應節點
+    class WebUI,AutoScript,TestEngine,DataParser blueNode;
+    class IssueTracker,InstrumentCtrl orangeNode;
+    class ResultDB dbNode;
+    class PassFail decisionNode;
